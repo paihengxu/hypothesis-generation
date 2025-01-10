@@ -14,7 +14,7 @@ import numpy as np
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from hypogenic.extract_label import retweet_extract_label, hotel_reviews_extract_label, persuasive_pairs_extract_label, dreaddit_extract_label
+from hypogenic.extract_label import retweet_extract_label, hotel_reviews_extract_label, persuasive_pairs_extract_label, dreaddit_extract_label, default_extract_label
 from hypogenic.tasks import BaseTask
 from hypogenic.prompt import BasePrompt
 from hypogenic.utils import (
@@ -62,6 +62,8 @@ def change_missing_labels(pred_list, label_list):
 def main():
     start_time = time.time()
     model_name = "gpt-4o-mini"
+    # task_name = "dreaddit"
+    task_name = "deceptive_reviews"
     # model_name = "meta-llama/Meta-Llama-3.1-70B-Instruct"
     use_ood = False # set to True if testing on OOD data
     if use_ood:
@@ -69,9 +71,9 @@ def main():
     else:
         config_version = ""
     task_config_path = os.path.join(
-        os.path.dirname(os.path.dirname(__file__)), f"data/dreaddit/config{config_version}.yaml"
+        os.path.dirname(os.path.dirname(__file__)), f"data/{task_name}/config{config_version}.yaml"
     )
-    if model_name ==  "meta-llama/Meta-Llama-3.1-70B-Instruct":
+    if model_name == "meta-llama/Meta-Llama-3.1-70B-Instruct":
         model_path = "/net/projects/chai-lab/shared_models/Meta-Llama-3.1-70B-Instruct"
 
     max_num_hypotheses = 20
@@ -90,13 +92,21 @@ def main():
     max_tokens = 4000
     for sample in ['final']:
         # change this file path to test other hypotheses
-        hypothesis_file = "./outputs/union/init_both_multi_refine/dreaddit/gpt-4o-mini/hyp_20/refine_6/hypotheses_training_sample_final_seed_42_epoch_0.json"
+        # hypothesis_file = "./outputs/union/init_both_multi_refine/dreaddit/gpt-4o-mini/hyp_20/refine_6/hypotheses_training_sample_final_seed_42_epoch_0.json"
+        hypothesis_file = f"./outputs/{task_name}/{model_name}/hyp_{max_num_hypotheses}/hypotheses_training_sample_{sample}_seed_{generation_seed}_epoch_{epoch}.json"
         accuracy_all = []
         f1_all = []
         dict = load_dict(hypothesis_file)
         hyp_bank = {}
 
-        task = BaseTask(task_config_path, extract_label=dreaddit_extract_label)
+        if task_name == "retweet":
+            task = BaseTask(task_config_path, extract_label=retweet_extract_label)
+        elif task_name == "deceptive_reviews":
+            task = BaseTask(task_config_path, extract_label=hotel_reviews_extract_label)
+        else:
+            logger.warning(f"Task {task_name} not found. Using default extract label.")
+            task = BaseTask(task_config_path, extract_label=default_extract_label)
+
         prompt_class = TestPrompt(task)
 
         for hypothesis in dict:

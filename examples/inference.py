@@ -13,7 +13,7 @@ from typing import Union
 import torch
 import numpy as np
 
-from hypogenic.extract_label import retweet_extract_label
+from hypogenic.extract_label import retweet_extract_label, hotel_reviews_extract_label, default_extract_label
 
 from hypogenic.tasks import BaseTask
 from hypogenic.prompt import BasePrompt
@@ -54,7 +54,9 @@ def main():
     start_time = time.time()
 
     # For detailed argument descriptions, please run `hypogenic_inference --help` or see `hypogenic_cmd/inference.py`
-    task_config_path = "./data/retweet/config.yaml"
+    # task_name = "retweet"
+    task_name = "deceptive_reviews"
+    task_config_path = f"./data/{task_name}/config.yaml"
     # model_name = "meta-llama/Meta-Llama-3.1-8B-Instruct"
     # model_path = "/net/scratch/llama/Meta-Llama-3.1-8B-Instruct"
     # model_type = "vllm"
@@ -64,7 +66,7 @@ def main():
     model_type = "gpt"
     inference_type = "default" # options: default, filter_and_weight, one_step_adaptive, two_step_adaptive
 
-    hypothesis_file = f"./outputs/retweet/{model_name}/hyp_20/hypotheses_training_sample_final_seed_42_epoch_0.json"
+    hypothesis_file = f"./outputs/{task_name}/{model_name}/hyp_20/hypotheses_training_sample_final_seed_42_epoch_0.json"
     adaptive_num_hypotheses = 5
     num_train = 75
     num_test = 25
@@ -81,7 +83,13 @@ def main():
     dict = load_dict(hypothesis_file)
     hyp_bank = {}
 
-    task = BaseTask(task_config_path, extract_label=retweet_extract_label)
+    if task_name == "retweet":
+        task = BaseTask(task_config_path, extract_label=retweet_extract_label)
+    elif task_name == "deceptive_reviews":
+        task = BaseTask(task_config_path, extract_label=hotel_reviews_extract_label)
+    else:
+        logger.warning(f"Task {task_name} not found. Using default extract label.")
+        task = BaseTask(task_config_path, extract_label=default_extract_label)
 
     for hypothesis in dict:
         hyp_bank[hypothesis] = SummaryInformation.from_dict(dict[hypothesis])

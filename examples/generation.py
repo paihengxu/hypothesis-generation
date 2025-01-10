@@ -55,7 +55,9 @@ def main():
     start_time = time.time()
 
     # For detailed argument descriptions, please run `hypogenic_generation --help` or see `hypogenic_cmd/generation.py`
-    task_config_path = "./data/retweet/config.yaml"
+    # task_name = "retweet"
+    task_name = "deceptive_reviews"
+    task_config_path = f"./data/{task_name}/config.yaml"
     # model_name = "meta-llama/Meta-Llama-3.1-8B-Instruct"
     # model_path = "/net/scratch/llama/Meta-Llama-3.1-8B-Instruct"
     # model_type = "vllm"
@@ -65,7 +67,7 @@ def main():
     model_type = "gpt"
     
     max_num_hypotheses = 20
-    output_folder = f"./outputs/retweet/{model_name}/hyp_{max_num_hypotheses}/"
+    output_folder = f"./outputs/{task_name}/{model_name}/hyp_{max_num_hypotheses}/"
     old_hypothesis_file = None
     num_init = 10
     num_train = 75
